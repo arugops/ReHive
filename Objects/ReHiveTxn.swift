@@ -8,6 +8,79 @@
 
 import Foundation
 
+
+public struct Transfer    : Codable {
+    let amount        : Int
+    let recipient     : String
+
+    public static func makeTransfer(_ amt: Int, recipient: String, completionHandler: @escaping (TransferResponse?, Error?) -> Void) {
+        var transferJSON:Data?
+        let encoder = JSONEncoder()
+        do {
+            //            encoder.outputFormatting = .prettyPrinted
+            transferJSON = try encoder.encode(Transfer(amount: amt, recipient: recipient))
+            // print(String(data: transferJSON, encoding: .utf8)!)
+        } catch {
+            CommonCode.showAlert(title: error.localizedDescription, message: "")
+            completionHandler(nil, error)
+            return
+        }
+
+        if let urlRequest = getURL(call: txnTransfer, httpBody: transferJSON) {
+            let task = hiveSession.dataTask(with: urlRequest, completionHandler: {(data, response, error) in
+                guard let responseData = data else {
+                    let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON2)
+                    CommonCode.showAlert(title: error.localizedDescription, message: "")
+                    completionHandler(nil, error)
+                    return
+                }
+                guard error == nil else {
+                    completionHandler(nil, error!)
+                    return
+                }
+                //            print("response \(response)")
+                let decoder = JSONDecoder()
+                do {
+                    let reply = try decoder.decode(TransferResponse.self, from: responseData)
+                    //                    print("reply: \(reply)")
+                    if reply.status == "error" {
+                        let detailedError = try decoder.decode(JSONError.self, from: responseData)
+                        print("detail: \(detailedError)")
+                    } else {
+                        completionHandler(reply, nil)
+                    }
+                } catch {
+                    completionHandler(nil, error)
+                }
+            })
+            task.resume()
+        } else {
+            // Unable to get a login URL
+        }
+    }
+}
+
+fileprivate struct RawTransferResponse : Codable {
+    let status      : String  // success
+    let data        : TransferData?
+    
+    struct TransferData  : Codable {
+        let id           : String?
+    }
+}
+
+public struct TransferResponse : Codable {
+    public var status      : String
+    public var txnData         : String
+    
+    public init(from decoder: Decoder) throws {
+        let rawTransferResponse = try RawTransferResponse(from: decoder)
+        status      = rawTransferResponse.status
+        txnData     = (rawTransferResponse.data?.id)!
+    }
+}
+
+
 struct RawTransactionList : Codable {
     let status  : String    //"success",
     let data    : Data

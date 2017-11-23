@@ -59,9 +59,9 @@ struct RawPartUser : Codable {
     let profile     : String?
 }
 
-struct Address : Codable {
-    let status      : String //"success",
-    let data        : RawAddressData
+struct RawAddress : Codable {
+    let status      : String? //"success",
+    let data        : RawAddressData?
     
 }
 struct RawAddressData : Codable {
@@ -74,23 +74,57 @@ struct RawAddressData : Codable {
     let status      : String    // "pending"
 }
 
-/*
- enum CodingKeys : String, CodingKey {
- case identifier
- case firstName = "first_name"
- case lastName  = "last_name"
- case email
- case username
- case idNumber  = "id_number"
- case birthDate = "birth_date"
- case profile
- //        case currency
- case company
- case language
- //        case nationality
- case metadata
- case mobileNumber = "mobile_number"
- case timezone
- case verified
- }
-*/
+public struct Address : Codable {
+    public var status       : String?
+    public var addresses    = AddressData()
+    
+    public struct AddressData  : Codable {
+        public var addrLine1        : String? // Credit
+        public var addrLine2        : String?
+        public var addrCity         : String?
+        public var addrStateProvince: String?
+        public var addrCountry      : String?
+        public var addrPostCode     : String?
+        public var addrStatus       : String?
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let rawAddress = try RawAddress(from: decoder)
+        status         = rawAddress.status
+        addresses      = AddressData.init(addrLine1:        rawAddress.data?.line_1 ?? "none",
+                                          addrLine2:        rawAddress.data?.line_2 ?? "none",
+                                          addrCity:         rawAddress.data?.city   ?? "none",
+                                          addrStateProvince: rawAddress.data?.state_province  ?? "none",
+                                          addrCountry:      rawAddress.data?.country  ?? "none",
+                                          addrPostCode:     rawAddress.data?.postal_code  ?? "none",
+                                          addrStatus:       rawAddress.data?.status  ?? "none")
+    }
+}
+
+extension Address {
+    public static func getAddress( completionHandler: @escaping (Address?, Error?) -> Void) {
+        if let urlRequest = getURL(call: getUsrAddress, httpBody: nil) {
+            let task = hiveSession.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
+                //  print("response \(response)")
+                //  print("data \(data)")
+                guard error == nil else {
+                    completionHandler(nil, error!)
+                    return
+                }
+                let decoder = JSONDecoder()
+                do {
+                    let reply = try decoder.decode(Address.self, from: data!)
+                    if reply.status == "error" {
+                        completionHandler(nil, error!)
+                    } else {
+                        completionHandler(reply, nil)
+                    }
+                } catch {
+                    completionHandler(nil, error)
+                }
+            })
+            task.resume()
+        }
+    }
+}
+

@@ -19,6 +19,7 @@ public enum RequestType : String {
     case PUT    = "PUT"
     case POST   = "POST"
     case PATCH  = "PATCH"
+    case DELETE = "DELETE"
 }
 
 public enum CallType : String {
@@ -33,10 +34,11 @@ public enum CallType : String {
     case SetUsrProfile          = "Update Profile"
     case GetUsrAddress          = "Retrieve Address"
     case SetUsrAddress          = "Update Address"
-    case ListUsrBankAccount     = "Retrieve Bank account list"
-    case NewUsrBankAccount      = "Create Bank account"
-    case GetUsrBankAccount      = "Retrieve Bank account"
-    case SetUsrBankAccount      = "Update Bank account"
+    case ListUsrBankAcc         = "Retrieve Bank account list"
+    case NewUsrBankAcc          = "Create Bank account"
+    case GetUsrBankAcc          = "Retrieve Bank account"
+    case SetUsrBankAcc          = "Update Bank account"
+    case DelUsrBankAcc          = "Delete Bank account"
 }
 
 enum BackendError: Error {
@@ -60,6 +62,13 @@ let txnRetrieve     = RehiveCall(callType: CallType.TxnRetrieve, requestType: Re
 
 let getUsrProfile   = RehiveCall(callType: CallType.GetUsrProfile,  requestType: RequestType.GET,   endPoint: baseURL + "user/")
 let setUsrProfile   = RehiveCall(callType: CallType.SetUsrProfile,  requestType: RequestType.PATCH, endPoint: baseURL + "user/")
+let getUsrAddress   = RehiveCall(callType: CallType.GetUsrAddress,  requestType: RequestType.GET,   endPoint: baseURL + "user/address/")
+let setUsrAddress   = RehiveCall(callType: CallType.SetUsrAddress,  requestType: RequestType.PATCH, endPoint: baseURL + "user/address/")
+let listUsrBankAcc  = RehiveCall(callType: CallType.ListUsrBankAcc, requestType: RequestType.GET,   endPoint: baseURL + "user/bank-accounts/")
+let newUsrBankAcc   = RehiveCall(callType: CallType.NewUsrBankAcc,  requestType: RequestType.POST,  endPoint: baseURL + "user/bank-accounts/")
+let getUsrBankAcc   = RehiveCall(callType: CallType.GetUsrBankAcc,  requestType: RequestType.GET,   endPoint: baseURL + "user/bank-accounts/{account_id}/")
+let setUsrBankAcc   = RehiveCall(callType: CallType.SetUsrBankAcc,  requestType: RequestType.PATCH, endPoint: baseURL + "user/bank-accounts/{account_id}/")
+let delUsrBankAcc   = RehiveCall(callType: CallType.DelUsrBankAcc,  requestType: RequestType.DELETE,endPoint: baseURL + "user/bank-accounts/{account_id}/")
 
 struct JSONError : Codable {
     let status  : String
