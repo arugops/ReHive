@@ -141,12 +141,26 @@ public struct LoginResponse : Codable {
     }
 }
 
-/*extension TransactionTotals {
-    static func getTotal( completionHandler: @escaping (TransactionTotals?, Error?) -> Void) {
-        if let urlRequest = getURL(call: txnTotal, httpBody: nil) {
-            let task = hiveSession.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
+public struct Logout    : Codable {
+    
+    public static func userLogout(completionHandler: @escaping (LogoutResponse?, Error?) -> Void) {
+        var logoutJSON:Data?
+        let encoder = JSONEncoder()
+        do {
+            //            encoder.outputFormatting = .prettyPrinted
+            logoutJSON = try encoder.encode(Logout())
+            //            print(String(data: loginJSON, encoding: .utf8)!)
+        } catch {
+            CommonCode.showAlert(title: error.localizedDescription, message: "")
+            completionHandler(nil, error)
+            return
+        }
+        
+        if let urlRequest = getURL(call: logout, httpBody: logoutJSON) {
+            let task = hiveSession.dataTask(with: urlRequest, completionHandler: {(data, response, error) in
                 guard let responseData = data else {
-                    //print(ErrorAction.ErrorActionJSON2)
+                    let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON2)
+                    CommonCode.showAlert(title: error.localizedDescription, message: "")
                     completionHandler(nil, error)
                     return
                 }
@@ -154,135 +168,41 @@ public struct LoginResponse : Codable {
                     completionHandler(nil, error!)
                     return
                 }
-                // print("response \(response)")
+                //            print("response \(response)")
                 let decoder = JSONDecoder()
                 do {
-                    let reply = try decoder.decode(TransactionTotals.self, from: responseData)
-                    //                print("reply: \(reply)")
+                    let reply = try decoder.decode(LogoutResponse.self, from: responseData)
                     if reply.status == "error" {
                         let detailedError = try decoder.decode(JSONError.self, from: responseData)
-                        print("detail: \(detailedError)")
+//                        print("detail: \(detailedError)")
                     } else {
+                        currentToken = reply.token
                         completionHandler(reply, nil)
                     }
                 } catch {
-                    print(ErrorAction.ErrorActionJSON3)
-                    print(error)
                     completionHandler(nil, error)
                 }
             })
             task.resume()
         }
     }
-    
 }
-*/
-/*
- guard let url = URL(string: TransactionTotals.endPoint) else {
- print(ErrorAction.ErrorActionJSON1)
- let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON1)
- completionHandler(nil, error)
- return
- }
- var urlRequest = URLRequest(url: url)
- urlRequest.httpMethod = "GET"
- let authorizationKey = "Token "+currentToken
- var headers = urlRequest.allHTTPHeaderFields ?? [:]
- headers["Content-Type"] = "application/json"
- urlRequest.allHTTPHeaderFields = headers
- urlRequest.addValue(authorizationKey, forHTTPHeaderField: "Authorization")
- 
- print("Headers \(urlRequest.allHTTPHeaderFields)")
- //        let session = URLSession.shared
 
- */
-//"user": {
-//    "identifier": "00000000-0000-0000-0000-000000000000",
-//    "first_name": "Joe",
-//    "last_name": "Soap",
-//    "email": "joe@rehive.com",
-//    "username": "",
-//    "mobile_number": "+27840000000",
-//    "profile": null
-//},
+// Login Response
+fileprivate struct RawLogoutResponse : Codable {
+    let status          : String  // success
+    let token           : String?
+}
 
-/*
- {
- //        let endpoint = Login.endpointForLogin()
- //        guard let url = URL(string: endpoint) else {
- //            print(ErrorAction.ErrorActionJSON1)
- //            let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON1)
- //            completionHandler(nil, error)
- //            return
- //        }
- //        var urlRequest = URLRequest(url: url)
- ////        urlRequest.httpMethod = "POST, OPTIONS"
- //        urlRequest.httpMethod = "POST"
- //
- //        var headers = urlRequest.allHTTPHeaderFields ?? [:]
- //        headers["Content-Type"] = "application/json"
- //        urlRequest.allHTTPHeaderFields = headers
- //
- //        let login = Login(user: "sean.evans@flash.co.za", company: "flashtest", password: "Summer17")
- //
- var loginJSON:Data?
- let encoder = JSONEncoder()
- do {
- encoder.outputFormatting = .prettyPrinted
- loginJSON = try encoder.encode(Login(user: userName, company: company, password: pw))
- //            print(String(data: loginJSON, encoding: .utf8)!)
- //            urlRequest.httpBody = loginJSON
- //            print("Request1 \(urlRequest)")
- //            print("Request2 \(urlRequest.debugDescription)")
- //            if let bodyData = urlRequest.httpBody {
- //                print(String(data: bodyData, encoding: .utf8) ?? "no body data")
- //            }
- } catch {
- print(error)
- completionHandler(nil, error)
- }
- if loginJSON != nil {
- if let urlRequest = getURL(call: login, httpBody: loginJSON) {
- 
- //        let session = URLSession.shared
- let task = hiveSession.dataTask(with: urlRequest, completionHandler: {
- (data, response, error) in
- guard let responseData = data else {
- print(ErrorAction.ErrorActionJSON2)
- completionHandler(nil, error)
- return
- }
- guard error == nil else {
- completionHandler(nil, error!)
- return
- }
- 
- //            print("response \(response)")
- 
- let decoder = JSONDecoder()
- do {
- let reply = try decoder.decode(LoginResponse.self, from: responseData)
- print("reply: \(reply)")
- if reply.status == "error" {
- let detailedError = try decoder.decode(JSONError.self, from: responseData)
- print("detail: \(detailedError)")
- } else {
- currentToken = reply.token
- //                    currentToken = (reply.data.first?.token)!     // reply.data.token
- print("Got token \(currentToken) ")
- completionHandler(reply, nil)
- }
- } catch {
- //                print(ErrorAction.ErrorActionJSON3)
- //                print(error)
- completionHandler(nil, error)
- }
- })
- task.resume()
- } else {
- // Unable to get a login URL
- }
- }
- }
- */
+public struct LogoutResponse : Codable {
+    public var status      : String
+    public var token       : String
+
+    public init(from decoder: Decoder) throws {
+        let rawLogoutResponse = try RawLogoutResponse(from: decoder)
+        status          = rawLogoutResponse.status
+        token           = rawLogoutResponse.token ?? "NIL"
+     }
+}
+
 

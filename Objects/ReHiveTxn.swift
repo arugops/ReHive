@@ -17,9 +17,9 @@ public struct Transfer    : Codable {
         var transferJSON:Data?
         let encoder = JSONEncoder()
         do {
-            //            encoder.outputFormatting = .prettyPrinted
+//            encoder.outputFormatting = .prettyPrinted
             transferJSON = try encoder.encode(Transfer(amount: amt, recipient: recipient))
-            // print(String(data: transferJSON, encoding: .utf8)!)
+//            print(String(data: transferJSON!, encoding: .utf8)!)
         } catch {
             CommonCode.showAlert(title: error.localizedDescription, message: "")
             completionHandler(nil, error)
@@ -45,7 +45,7 @@ public struct Transfer    : Codable {
                     //                    print("reply: \(reply)")
                     if reply.status == "error" {
                         let detailedError = try decoder.decode(JSONError.self, from: responseData)
-                        print("detail: \(detailedError)")
+ //                       print("detail: \(detailedError)")
                     } else {
                         completionHandler(reply, nil)
                     }
@@ -70,16 +70,15 @@ fileprivate struct RawTransferResponse : Codable {
 }
 
 public struct TransferResponse : Codable {
-    public var status      : String
+    public var status          : String
     public var txnData         : String
     
     public init(from decoder: Decoder) throws {
         let rawTransferResponse = try RawTransferResponse(from: decoder)
         status      = rawTransferResponse.status
-        txnData     = (rawTransferResponse.data?.id)!
+        txnData     = rawTransferResponse.data?.id ?? ""
     }
 }
-
 
 struct RawTransactionList : Codable {
     let status  : String    //"success",
@@ -110,7 +109,7 @@ struct RawTransactionList : Codable {
         let currency    : Currency
         let user        : RawPartUser
         let source_transaction      : Source_transaction?  //null,
-        let destination_transaction : Bool? //null,
+        let destination_transaction : Dest_transaction? //null,
 //        let messages    : Messages?
         let created     : Double          // 1476691969394,
         let updated     : Double          // 1496135465287
@@ -121,6 +120,10 @@ struct RawTransactionList : Codable {
     }
 
     struct Source_transaction: Codable {
+        let metadata    : Bool?
+    }
+
+    struct Dest_transaction: Codable {
         let metadata    : Bool?
     }
 
@@ -144,6 +147,7 @@ public struct TransactionList : Codable {
         public var currencyCode : String?
         public var userName    : String?
         public var createdDate : Double?
+        public var txnStatus   : String?
     }
 
     public init(from decoder: Decoder) throws {
@@ -152,7 +156,7 @@ public struct TransactionList : Codable {
         status       = rawTransactionList.status
         transactions = []
         for result in rawTransactionList.data.results {
-            //            print("result : \(result)")
+//             print("result : \(result)")
             let txn = Transaction.init(label:       result.label ,
                                        subType:     result.subtype ?? "",
                                        amount:      result.amount ,
@@ -160,7 +164,8 @@ public struct TransactionList : Codable {
                                        company:     result.company,
                                        currencyCode: result.currency.code,
                                        userName:    result.user.username,
-                                       createdDate: result.created)
+                                       createdDate: result.created,
+                                       txnStatus :  result.status)
             transactions.append(txn)
         }
     }

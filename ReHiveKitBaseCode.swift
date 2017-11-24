@@ -24,6 +24,7 @@ public enum RequestType : String {
 
 public enum CallType : String {
     case Login                  = "Login"
+    case Logout                 = "Logout"
     case TxnList                = "List Transactions"
     case TxnTotal               = "Total Transactions"
     case TxnDebit               = "Create Debit"
@@ -53,6 +54,7 @@ struct RehiveCall {
 }
 
 let login           = RehiveCall(callType: CallType.Login,       requestType: RequestType.POST,  endPoint: baseURL + "auth/login/")
+let logout          = RehiveCall(callType: CallType.Logout,      requestType: RequestType.POST,  endPoint: baseURL + "auth/logout/")
 let txnTotal        = RehiveCall(callType: CallType.TxnTotal,    requestType: RequestType.GET,   endPoint: baseURL + "transactions/totals/")
 let txnList         = RehiveCall(callType: CallType.TxnList,     requestType: RequestType.GET,   endPoint: baseURL + "transactions/")
 let txnDebit        = RehiveCall(callType: CallType.TxnDebit,    requestType: RequestType.GET,   endPoint: baseURL + "transactions/debit/")
@@ -88,9 +90,10 @@ func getURL(call: RehiveCall, httpBody: Data?) -> URLRequest? {
     }
     var urlRequest = URLRequest(url: url)
     urlRequest.httpMethod = call.requestType.rawValue
-    if call.callType == CallType.Login {
+    if call.requestType == RequestType.POST {
         urlRequest.httpBody = httpBody
-    } else {
+    }
+    if call.callType != CallType.Login {
         let authorizationKey = "Token "+currentToken
         urlRequest.addValue(authorizationKey, forHTTPHeaderField: "Authorization")
     }
