@@ -15,31 +15,41 @@ public var currentToken = ""
 public var contentType  = "application/json"
 
 public enum RequestType : String {
-    case GET    = "GET"
-    case PUT    = "PUT"
-    case POST   = "POST"
-    case PATCH  = "PATCH"
-    case DELETE = "DELETE"
+    case get    = "GET"
+    case put    = "PUT"
+    case post   = "POST"
+    case patch  = "PATCH"
+    case delete = "DELETE"
 }
 
 public enum CallType : String {
-    case Login                  = "Login"
-    case Logout                 = "Logout"
-    case TxnList                = "List Transactions"
-    case TxnTotal               = "Total Transactions"
-    case TxnDebit               = "Create Debit"
-    case TxnCredit              = "Create Credit"
-    case TxnTransfer            = "Create Transfer"
-    case TxnRetrieve            = "Retrieve Transactions"
-    case GetUsrProfile          = "Retrieve Profile"
-    case SetUsrProfile          = "Update Profile"
-    case GetUsrAddress          = "Retrieve Address"
-    case SetUsrAddress          = "Update Address"
-    case ListUsrBankAcc         = "Retrieve Bank account list"
-    case NewUsrBankAcc          = "Create Bank account"
-    case GetUsrBankAcc          = "Retrieve Bank account"
-    case SetUsrBankAcc          = "Update Bank account"
-    case DelUsrBankAcc          = "Delete Bank account"
+    case RegisterCompany            = "Register Company"
+    case Register                   = "Register"
+    case Login                      = "Login"
+    case Logout                     = "Logout"
+    case LogoutAll                  = "Logout All"
+    case ChangePW                   = "Change Password"
+    case ResetPW                    = "Reset Password"
+    case ResetPWConfirm             = "Reset Password Confirm"
+    case ResendeMailVerification    = "Resend eMail Verification"
+    case ResendeMobileVerification  = "Resend Mobile Verification"
+    case VerifyeMail                = "Verify eMail"
+    case VerifyeMobile              = "Verify Mobile"
+    case TxnList                    = "List Transactions"
+    case TxnTotal                   = "Total Transactions"
+    case TxnDebit                   = "Create Debit"
+    case TxnCredit                  = "Create Credit"
+    case TxnTransfer                = "Create Transfer"
+    case TxnRetrieve                = "Retrieve Transactions"
+    case GetUsrProfile              = "Retrieve Profile"
+    case SetUsrProfile              = "Update Profile"
+    case GetUsrAddress              = "Retrieve Address"
+    case SetUsrAddress              = "Update Address"
+    case ListUsrBankAcc             = "Retrieve Bank account list"
+    case NewUsrBankAcc              = "Create Bank account"
+    case GetUsrBankAcc              = "Retrieve Bank account"
+    case SetUsrBankAcc              = "Update Bank account"
+    case DelUsrBankAcc              = "Delete Bank account"
 }
 
 enum BackendError: Error {
@@ -47,30 +57,44 @@ enum BackendError: Error {
     case objectSerialization(reason: String)
 }
 
-struct RehiveCall {
+public struct RehiveCall {
     var callType    : CallType
     var requestType : RequestType
     var endPoint    : String
 }
 
-let login           = RehiveCall(callType: CallType.Login,       requestType: RequestType.POST,  endPoint: baseURL + "auth/login/")
-let logout          = RehiveCall(callType: CallType.Logout,      requestType: RequestType.POST,  endPoint: baseURL + "auth/logout/")
-let txnTotal        = RehiveCall(callType: CallType.TxnTotal,    requestType: RequestType.GET,   endPoint: baseURL + "transactions/totals/")
-let txnList         = RehiveCall(callType: CallType.TxnList,     requestType: RequestType.GET,   endPoint: baseURL + "transactions/")
-let txnDebit        = RehiveCall(callType: CallType.TxnDebit,    requestType: RequestType.GET,   endPoint: baseURL + "transactions/debit/")
-let txnCredit       = RehiveCall(callType: CallType.TxnCredit,   requestType: RequestType.POST,  endPoint: baseURL + "transactions/credit/")
-let txnTransfer     = RehiveCall(callType: CallType.TxnCredit,   requestType: RequestType.POST,  endPoint: baseURL + "transactions/transfer/")
-let txnRetrieve     = RehiveCall(callType: CallType.TxnRetrieve, requestType: RequestType.GET,   endPoint: baseURL + "transactions/{id}")
+// Auth
+public let registerCompany = RehiveCall(callType: CallType.Register,       requestType: RequestType.post,  endPoint: baseURL + "auth/company/register/")
+public let register        = RehiveCall(callType: CallType.Register,       requestType: RequestType.post,  endPoint: baseURL + "auth/register/")
+public let login           = RehiveCall(callType: CallType.Login,          requestType: RequestType.post,  endPoint: baseURL + "auth/login/")
+public let logout          = RehiveCall(callType: CallType.Logout,         requestType: RequestType.post,  endPoint: baseURL + "auth/logout/")
+public let logoutAll       = RehiveCall(callType: CallType.LogoutAll,      requestType: RequestType.post,  endPoint: baseURL + "auth/logout/all/")
+let changePassword  = RehiveCall(callType: CallType.ChangePW,       requestType: RequestType.post,  endPoint: baseURL + "auth/password/change/")
+let resetPassword   = RehiveCall(callType: CallType.ResetPW,        requestType: RequestType.post,  endPoint: baseURL + "auth/password/reset/")
+let resetPWConfirm  = RehiveCall(callType: CallType.ResetPWConfirm, requestType: RequestType.post,  endPoint: baseURL + "auth/password/reset/confirm/")
+let resendeMailVerification     = RehiveCall(callType: CallType.ResendeMailVerification,   requestType: RequestType.post,  endPoint: baseURL + "auth/email/verify/resend/")
+let resendeMobileVerification   = RehiveCall(callType: CallType.ResendeMobileVerification,   requestType: RequestType.post,  endPoint: baseURL + "auth/mobile/verify/resend/")
+let emailVerify     = RehiveCall(callType: CallType.ResetPW,     requestType: RequestType.post,  endPoint: baseURL + "auth/auth/email/verify/")
+let mobileVerify    = RehiveCall(callType: CallType.ResetPW,     requestType: RequestType.post,  endPoint: baseURL + "auth/auth/email/verify/")
 
-let getUsrProfile   = RehiveCall(callType: CallType.GetUsrProfile,  requestType: RequestType.GET,   endPoint: baseURL + "user/")
-let setUsrProfile   = RehiveCall(callType: CallType.SetUsrProfile,  requestType: RequestType.PATCH, endPoint: baseURL + "user/")
-let getUsrAddress   = RehiveCall(callType: CallType.GetUsrAddress,  requestType: RequestType.GET,   endPoint: baseURL + "user/address/")
-let setUsrAddress   = RehiveCall(callType: CallType.SetUsrAddress,  requestType: RequestType.PATCH, endPoint: baseURL + "user/address/")
-let listUsrBankAcc  = RehiveCall(callType: CallType.ListUsrBankAcc, requestType: RequestType.GET,   endPoint: baseURL + "user/bank-accounts/")
-let newUsrBankAcc   = RehiveCall(callType: CallType.NewUsrBankAcc,  requestType: RequestType.POST,  endPoint: baseURL + "user/bank-accounts/")
-let getUsrBankAcc   = RehiveCall(callType: CallType.GetUsrBankAcc,  requestType: RequestType.GET,   endPoint: baseURL + "user/bank-accounts/{account_id}/")
-let setUsrBankAcc   = RehiveCall(callType: CallType.SetUsrBankAcc,  requestType: RequestType.PATCH, endPoint: baseURL + "user/bank-accounts/{account_id}/")
-let delUsrBankAcc   = RehiveCall(callType: CallType.DelUsrBankAcc,  requestType: RequestType.DELETE,endPoint: baseURL + "user/bank-accounts/{account_id}/")
+// Transactions
+let txnTotal        = RehiveCall(callType: CallType.TxnTotal,       requestType: RequestType.get,   endPoint: baseURL + "transactions/totals/")
+let txnList         = RehiveCall(callType: CallType.TxnList,        requestType: RequestType.get,   endPoint: baseURL + "transactions/")
+let txnDebit        = RehiveCall(callType: CallType.TxnDebit,       requestType: RequestType.get,   endPoint: baseURL + "transactions/debit/")
+let txnCredit       = RehiveCall(callType: CallType.TxnCredit,      requestType: RequestType.post,  endPoint: baseURL + "transactions/credit/")
+let txnTransfer     = RehiveCall(callType: CallType.TxnCredit,      requestType: RequestType.post,  endPoint: baseURL + "transactions/transfer/")
+let txnRetrieve     = RehiveCall(callType: CallType.TxnRetrieve,    requestType: RequestType.get,   endPoint: baseURL + "transactions/{id}")
+
+// User
+let getUsrProfile   = RehiveCall(callType: CallType.GetUsrProfile,  requestType: RequestType.get,   endPoint: baseURL + "user/")
+let setUsrProfile   = RehiveCall(callType: CallType.SetUsrProfile,  requestType: RequestType.patch, endPoint: baseURL + "user/")
+let getUsrAddress   = RehiveCall(callType: CallType.GetUsrAddress,  requestType: RequestType.get,   endPoint: baseURL + "user/address/")
+let setUsrAddress   = RehiveCall(callType: CallType.SetUsrAddress,  requestType: RequestType.patch, endPoint: baseURL + "user/address/")
+public let listUsrBankAcc  = RehiveCall(callType: CallType.ListUsrBankAcc, requestType: RequestType.get,   endPoint: baseURL + "user/bank-accounts/")
+public let newUsrBankAcc   = RehiveCall(callType: CallType.NewUsrBankAcc,  requestType: RequestType.post,  endPoint: baseURL + "user/bank-accounts/")
+public let getUsrBankAcc   = RehiveCall(callType: CallType.GetUsrBankAcc,  requestType: RequestType.get,   endPoint: baseURL + "user/bank-accounts/{account_id}/")
+public let setUsrBankAcc   = RehiveCall(callType: CallType.SetUsrBankAcc,  requestType: RequestType.patch, endPoint: baseURL + "user/bank-accounts/{account_id}/")
+public let delUsrBankAcc   = RehiveCall(callType: CallType.DelUsrBankAcc,  requestType: RequestType.delete,endPoint: baseURL + "user/bank-accounts/{account_id}/")
 
 struct JSONError : Codable {
     let status  : String
@@ -84,13 +108,12 @@ struct JSONError : Codable {
 
 func getURL(call: RehiveCall, httpBody: Data?) -> URLRequest? {
     guard let url = URL(string: call.endPoint) else {
-        let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON1)
-        CommonCode.showAlert(title: error.localizedDescription, message: "")
+//        let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON1)
         return nil
     }
     var urlRequest = URLRequest(url: url)
     urlRequest.httpMethod = call.requestType.rawValue
-    if call.requestType == RequestType.POST {
+    if call.requestType == RequestType.post {
         urlRequest.httpBody = httpBody
     }
     if call.callType != CallType.Login {
@@ -107,30 +130,6 @@ struct Currency : Codable {
     let symbol          : String
     let unit            : String
     let divisibility    : Int
-//    enum CodingKeys : String, CodingKey {
-//        case currencyDesc    = "description"
-//        case currencyCode    = "code"
-//        case currencySymbol  = "symbol"
-//        case currencyUnit    = "unit"
-//        case currencyDivisibility = "divisibility"
-//    }
-}
-
-class CommonCode {
-    
-    class func showAlert(title: String, message: String){
-        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        
-        let OKAction = UIAlertAction(title: "OK", style: .default)
-        alertController.addAction(OKAction)
-        
-        var alertWindow : UIWindow!
-        alertWindow = UIWindow.init(frame: UIScreen.main.bounds)
-        alertWindow.rootViewController = UIViewController.init()
-        alertWindow.windowLevel = UIWindowLevelAlert + 1
-        alertWindow.makeKeyAndVisible()
-        alertWindow.rootViewController?.present(alertController, animated: true)
-    }
 }
 
 struct ErrorAction {

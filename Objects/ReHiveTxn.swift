@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 public struct Transfer    : Codable {
     let amount        : Int
     let recipient     : String
@@ -21,7 +20,6 @@ public struct Transfer    : Codable {
             transferJSON = try encoder.encode(Transfer(amount: amt, recipient: recipient))
 //            print(String(data: transferJSON!, encoding: .utf8)!)
         } catch {
-            CommonCode.showAlert(title: error.localizedDescription, message: "")
             completionHandler(nil, error)
             return
         }
@@ -30,7 +28,6 @@ public struct Transfer    : Codable {
             let task = hiveSession.dataTask(with: urlRequest, completionHandler: {(data, response, error) in
                 guard let responseData = data else {
                     let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON2)
-                    CommonCode.showAlert(title: error.localizedDescription, message: "")
                     completionHandler(nil, error)
                     return
                 }

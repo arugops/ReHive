@@ -8,6 +8,19 @@
 
 import Foundation
 
+/*
+ Login.userLogin
+ Logout.userLogout       - for single toke or all tokens
+ Register.registerAll    - for both user & company
+ ChangePassWord.changePassword
+ ResetPassWord.resetPassWord
+ ResetPassWordConfirm.resetPassWordConfirm
+ ResendeMailVerification.resendeMail
+ ResendeMobileVerification.resendeMobile
+ VerifyeMail.verifyeMail
+ VerifyeMobile.verifyMobile
+*/
+
 public struct Login    : Codable {
     let user        : String        // email, mobile number, or unique identifier
     let company     : String
@@ -22,7 +35,6 @@ public struct Login    : Codable {
             loginJSON = try encoder.encode(Login(user: userName, company: company, password: pw))
             //            print(String(data: loginJSON, encoding: .utf8)!)
         } catch {
-            CommonCode.showAlert(title: error.localizedDescription, message: "")
             completionHandler(nil, error)
             return
         }
@@ -31,7 +43,6 @@ public struct Login    : Codable {
             let task = hiveSession.dataTask(with: urlRequest, completionHandler: {(data, response, error) in
                 guard let responseData = data else {
                     let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON2)
-                    CommonCode.showAlert(title: error.localizedDescription, message: "")
                     completionHandler(nil, error)
                     return
                 }
@@ -44,14 +55,10 @@ public struct Login    : Codable {
                 do {
                     let reply = try decoder.decode(LoginResponse.self, from: responseData)
 //                    print("reply: \(reply)")
-                    if reply.status == "error" {
-                        let detailedError = try decoder.decode(JSONError.self, from: responseData)
-                        print("detail: \(detailedError)")
-                    } else {
+                    if reply.status == "success" {
                         currentToken = reply.token
-                        //                            print("Got token \(currentToken) ")
-                        completionHandler(reply, nil)
                     }
+                    completionHandler(reply, nil)
                 } catch {
                     completionHandler(nil, error)
                 }
@@ -82,7 +89,6 @@ fileprivate struct RawLoginResponse : Codable {
     struct Permission_groups: Codable {
         let name        : [String?]    //admin
     }
-    
 }
 
 struct KYC  : Codable {
@@ -142,25 +148,66 @@ public struct LoginResponse : Codable {
 }
 
 public struct Logout    : Codable {
-    
-    public static func userLogout(completionHandler: @escaping (LogoutResponse?, Error?) -> Void) {
-        var logoutJSON:Data?
+
+    public static func userLogout(_ rehiveCall : RehiveCall , completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
         let encoder = JSONEncoder()
         do {
-            //            encoder.outputFormatting = .prettyPrinted
-            logoutJSON = try encoder.encode(Logout())
-            //            print(String(data: loginJSON, encoding: .utf8)!)
+            let logoutJSON = try encoder.encode(Logout())
+            if let urlRequest = getURL(call: rehiveCall, httpBody: logoutJSON) {
+                getResponse(from: urlRequest, completionHandler: { (response, err) in
+                    completionHandler(response, err)
+                })
+            }
         } catch {
-            CommonCode.showAlert(title: error.localizedDescription, message: "")
+            completionHandler(nil, error)
+        }
+    }
+}
+
+public struct Register : Codable {
+    let first_name           : String
+    let last_name            : String
+    let email                : String
+    let company              : String
+    let password1            : String
+    let password2            : String
+    let terms_and_conditions : Bool?
+    
+    public static func registerAll (_ isUser    : Bool,     // Can register user or Company
+                                   firstName    : String,
+                                   lastName     : String,
+                                   email        : String,
+                                   company      : String,
+                                   pw1          : String,
+                                   pw2          : String,
+                                   termsAgreed  : Bool,
+                                   completionHandler: @escaping (LoginResponse?, Error?) -> Void) {
+        var registerJSON:Data?
+        let encoder = JSONEncoder()
+        do {
+            registerJSON = try encoder.encode(Register(first_name: firstName,
+                                                       last_name: lastName,
+                                                       email: email,
+                                                       company: company,
+                                                       password1: pw1,
+                                                       password2: pw2,
+                                                       terms_and_conditions: termsAgreed))
+        } catch {
             completionHandler(nil, error)
             return
         }
         
-        if let urlRequest = getURL(call: logout, httpBody: logoutJSON) {
+        var rehiveCallType : RehiveCall
+        if isUser {
+            rehiveCallType = register
+        } else {
+            rehiveCallType = registerCompany
+        }
+        
+        if let urlRequest = getURL(call: rehiveCallType, httpBody: registerJSON) {
             let task = hiveSession.dataTask(with: urlRequest, completionHandler: {(data, response, error) in
                 guard let responseData = data else {
                     let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON2)
-                    CommonCode.showAlert(title: error.localizedDescription, message: "")
                     completionHandler(nil, error)
                     return
                 }
@@ -168,17 +215,13 @@ public struct Logout    : Codable {
                     completionHandler(nil, error!)
                     return
                 }
-                //            print("response \(response)")
                 let decoder = JSONDecoder()
                 do {
-                    let reply = try decoder.decode(LogoutResponse.self, from: responseData)
-                    if reply.status == "error" {
-                        let detailedError = try decoder.decode(JSONError.self, from: responseData)
-//                        print("detail: \(detailedError)")
-                    } else {
+                    let reply = try decoder.decode(LoginResponse.self, from: responseData)
+                    if reply.status == "success" {
                         currentToken = reply.token
-                        completionHandler(reply, nil)
                     }
+                    completionHandler(reply, nil)
                 } catch {
                     completionHandler(nil, error)
                 }
@@ -188,21 +231,183 @@ public struct Logout    : Codable {
     }
 }
 
-// Login Response
-fileprivate struct RawLogoutResponse : Codable {
+public struct ChangePassWord : Codable {
+    let old_password             : String
+    let new_password1            : String
+    let new_password2            : String
+    
+    public static func changePassWord (_ oldPassword      : String,
+                                        pw1          : String,
+                                        pw2          : String,
+                                        completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
+        let encoder = JSONEncoder()
+        do {
+            let passwordJSON = try encoder.encode(ChangePassWord(old_password: oldPassword, new_password1: pw1, new_password2: pw2))
+            if let urlRequest = getURL(call: changePassword, httpBody: passwordJSON) {
+                getResponse(from: urlRequest, completionHandler: { (response, err) in
+                    completionHandler(response, err)
+                })
+            }
+        } catch {
+            completionHandler(nil, error)
+        }
+    }
+}
+
+public struct ResetPassWord : Codable {
+    let user             : String
+    let company          : String
+    
+    public static func resetPassWord (_ user      : String,
+                                       company     : String,
+                                       completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
+        let encoder = JSONEncoder()
+        do {
+            let passwordJSON = try encoder.encode(ResetPassWord(user: user, company: company))
+            if let urlRequest = getURL(call: changePassword, httpBody: passwordJSON) {
+                getResponse(from: urlRequest, completionHandler: { (response, err) in
+                    completionHandler(response, err)
+                })
+            }
+        } catch {
+            completionHandler(nil, error)
+        }
+    }
+}
+
+public struct ResetPassWordConfirm : Codable {
+    let new_password1       : String
+    let new_password2       : String
+    let uid                 : String
+    let token               : String
+    
+    public static func resetPassWordConfirm (_ pw1    : String,
+                                             pw2      : String,
+                                             uid      : String,
+                                             token    : String,
+                                             completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
+        let encoder = JSONEncoder()
+        do {
+            let passwordJSON = try encoder.encode(ResetPassWordConfirm(new_password1: pw1, new_password2: pw2, uid: uid, token: token))
+            if let urlRequest = getURL(call: resetPWConfirm, httpBody: passwordJSON) {
+                getResponse(from: urlRequest, completionHandler: { (response, err) in
+                    completionHandler(response, err)
+                })
+            }
+        } catch {
+            completionHandler(nil, error)
+            return
+        }
+    }
+}
+
+public struct ResendeMailVerification : Codable {
+    let email                 : String
+    let company               : String
+    
+    public static func resendEmail (_ email    : String, company    : String,
+                                       completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
+        let encoder = JSONEncoder()
+        do {
+            let passwordJSON = try encoder.encode(ResendeMailVerification(email: email, company: company))
+            if let urlRequest = getURL(call: resendeMailVerification, httpBody: passwordJSON) {
+                getResponse(from: urlRequest, completionHandler: { (response, err) in
+                    completionHandler(response, err)
+                })
+            }
+        } catch {
+            completionHandler(nil, error)
+        }
+    }
+}
+
+public struct ResendeMobileVerification : Codable {
+    let mobile                 : String
+    let company                : String
+    
+    public static func resendMobile (_ mobile    : String, company    : String,
+                                    completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
+        let encoder = JSONEncoder()
+        do {
+            let passwordJSON = try encoder.encode(ResendeMobileVerification(mobile: mobile, company: company))
+            if let urlRequest = getURL(call: resendeMobileVerification, httpBody: passwordJSON) {
+                getResponse(from: urlRequest, completionHandler: { (response, err) in
+                    completionHandler(response, err)
+                })
+            }
+        } catch {
+            completionHandler(nil, error)
+        }
+    }
+}
+
+public struct VerifyMobile : Codable {
+    let otp                 : String
+    
+    public static func verifyMobile (_ otp : String, completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
+        let encoder = JSONEncoder()
+        do {
+            let passwordJSON = try encoder.encode(VerifyMobile(otp: otp))
+            if let urlRequest = getURL(call: mobileVerify, httpBody: passwordJSON) {
+                getResponse(from: urlRequest, completionHandler: { (response, err) in
+                    completionHandler(response, err)
+                })
+            }
+        } catch {
+            completionHandler(nil, error)
+        }
+    }
+}
+
+public struct VerifyeMail : Codable {
+    let key                 : String
+    
+    public static func verifyeMail (_ key : String, completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
+        let encoder = JSONEncoder()
+        do {
+            let passwordJSON = try encoder.encode(VerifyeMail(key: key))
+            if let urlRequest = getURL(call: emailVerify, httpBody: passwordJSON) {
+                getResponse(from: urlRequest, completionHandler: { (response, err) in
+                    completionHandler(response, err)
+                })
+            }
+        } catch {
+            completionHandler(nil, error)
+        }
+    }
+}
+
+fileprivate struct RawPasswordResponse : Codable {
     let status          : String  // success
-    let token           : String?
 }
 
-public struct LogoutResponse : Codable {
+public struct PasswordResponse : Codable {
     public var status      : String
-    public var token       : String
-
+    
     public init(from decoder: Decoder) throws {
-        let rawLogoutResponse = try RawLogoutResponse(from: decoder)
-        status          = rawLogoutResponse.status
-        token           = rawLogoutResponse.token ?? "NIL"
-     }
+        let rawPasswordResponse = try RawPasswordResponse(from: decoder)
+        status          = rawPasswordResponse.status
+    }
 }
 
-
+func getResponse(from currentRequest : URLRequest,completionHandler: @escaping (PasswordResponse?, Error?) -> Void) {
+    let task = hiveSession.dataTask(with: currentRequest, completionHandler: {(data, response, error) in
+        guard let responseData = data else {
+            let error = BackendError.urlError(reason: ErrorAction.ErrorActionJSON2)
+            completionHandler(nil, error)
+            return
+        }
+        guard error == nil else {
+            completionHandler(nil, error!)
+            return
+        }
+        let decoder = JSONDecoder()
+        do {
+            let reply = try decoder.decode(PasswordResponse.self, from: responseData)
+            completionHandler(reply, nil)
+        } catch {
+            completionHandler(nil, error)
+        }
+    })
+    task.resume()
+}
